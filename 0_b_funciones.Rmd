@@ -70,7 +70,40 @@ fnull0 <- function(x) {
 
 ```{r}
 # función para extender los intervalos-----------------------------------------
-# extend_intervals <- function()
+extend_intervals <- function(database,  max_sp = 90, i){
+
+  base1 <- database %>%
+    mutate(a = as.numeric(presc_start_date),
+           b = as.numeric(presc_end_date)) %>% 
+    filter(id == i) %>%
+    mutate(period = c(1, 1 + cumsum(lead(a) >
+                              cummax(b))[-n()])) %>% 
+    group_by(id, period) %>% 
+    summarise(
+    duracion_sp = sum(b - a),
+    a = min(a),
+    b = max(b),
+    .groups = "drop") %>% 
+    mutate(duracion = b - a,
+         sp = pmin(max_sp, duracion_sp - duracion),
+         b_new = NA)
+         
+if (nrow(base1) > 1) for (n in 1:(nrow(base1) - 1)) {
+base1$b_new[n] = min(base1$b[n] + base1$sp[n], base1$a[n + 1], na.rm = TRUE)
+base1$sp[n + 1] = min(90, 
+               base1$sp[n + 1] + base1$sp[n] - base1$b_new[n] + base1$b[n])
+}
+base1$b_new[nrow(base1)] = base1$b[nrow(base1)] + base1$sp[nrow(base1)]
+
+base1 %>% 
+  mutate(periodo = c(1, 1 + cumsum(lead(a) >
+                              cummax(b_new))[-n()])) %>% 
+  group_by(id, period) %>% 
+  summarise(
+    duracion = sum(b_new - a),
+    a = min(a),
+    b = max(b_new),
+    .groups = "drop")} 
 
 ```
 
