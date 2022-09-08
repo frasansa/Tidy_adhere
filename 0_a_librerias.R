@@ -1,0 +1,16 @@
+# Librerías
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(knitr)
+library(kableExtra)
+library(scales)
+library(stringr)
+library(conflicted)
+library(glue)
+library(janitor)
+library(Hmisc)
+library(skimr)
+library(ggrepel)
+# usar fuciones de tidyverse antes que las de otros paquetes-------------------
+conflict_prefer_all("dplyr")

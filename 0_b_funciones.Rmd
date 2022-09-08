@@ -1,0 +1,93 @@
+---
+title: "Funciones"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+
+```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+source("0_a_librerias.R")
+
+# creo una función ficticia para ver si se han cargado las funciones
+se_ha_cargado_f <- "Sí"
+
+```
+
+# Descripción
+
+***
+
+En este .Rmd van a estar todas las funciones que se utilizarán en el paquete tidy_adhere, así como otras funciones auxiliares que se van a utilizar para el limpiado de la base y la creación de los resultados. El objetivo último, es acabar convirtiendo este .Rmd en un paquete de R. Como manera de estructurar el trabajo, cada función irá por separado en un chunk.
+
+# Funciones auxiliares
+
+***
+
+En esta sección se encuentran las funciones auxiliares.
+
+## fymd
+
+Función que transforma los 10 primeros carácteres de una cadena en una fecha mediante la función de ymd de la librería lubridate.
+
+```{r fymd}
+# fecha en texto a ymd
+fymd <- function(x) {
+  x = as.Date(ymd(str_sub(x, 1, 10)))
+  }
+
+```
+
+## fnullna
+
+Función que transforma una cadena con texto "NULL" a NA.
+
+```{r fnullna}
+
+fnullna <- function(x) {
+  x = if_else(x == "NULL", NA_character_, x)
+  }
+
+```
+
+## fnull0
+
+Función que transforma una cadena con texto "NULL" a "0".
+
+```{r}
+
+fnull0 <- function(x) {
+  x = if_else(x == "NULL", 0, as.numeric(x))
+  }
+
+```
+
+
+# Funciones de tidy_adhere
+
+***
+
+## extend_intervals
+
+```{r}
+# función para extender los intervalos-----------------------------------------
+# extend_intervals <- function()
+
+```
+
+## project_intervals
+
+```{r}
+# función para "proyectar en planta" los intervalos----------------------------
+# project_intervals <- function()
+
+```
+
+
+## concomitant_intervals
+
+```{r}
+# función para calcular los intervalos concomitantes---------------------------
+# concomitant_intervals <- function()
+
+```
+

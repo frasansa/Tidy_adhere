@@ -1,0 +1,229 @@
+---
+title: "Manejo recetas"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+
+```
+
+```{r librerias, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+source_rmd("0_b_funciones.rmd")
+
+```
+
+# load data
+
+```{r cargar-datos}
+# cargar datos-----------------------------------------------------------------
+muestra_recetas <- readRDS(file.path("Datos", "muestra_recetas.RDS"))
+
+```
+
+# processing data
+
+```{r}
+# processing data--------------------------------------------------------------
+prescriptions_sample <- muestra_recetas %>% 
+  # max censoring date is one-year from index date
+  mutate(censoring_date = pmin(index_date %m+% years(1), censoring_date)) %>% 
+  # filter prescriptions inside follow-up( one-year max)
+  filter(presc_start_date >= index_date,
+         presc_start_date < censoring_date) %>% 
+  # censoring presc_end_date to censoring date
+  mutate(presc_end_date = pmin(presc_end_date, censoring_date))
+  
+```
+
+# plot prescriptions
+
+***
+
+```{r}
+# define ggplot theme----------------------------------------------------------
+theme_set(theme_bw())
+tema_azul <- theme_update(
+  plot.background = element_rect(fill = "aliceblue", colour = "black"),
+  strip.background = element_rect(colour = "black", fill = "white"))
+
+```
+
+```{r}
+# pintar recetas del sujeto durante un año-------------------------------------
+interest_id <- 1
+prescriptions_id <- prescriptions_sample %>% 
+  filter(id == interest_id) %>%
+  arrange(presc_start_date) %>% 
+  mutate(n_presc = 1:n(), .after = id) %>% 
+  mutate(filled = factor(filled))
+
+```
+
+```{r}
+# kable the table of prescriptions---------------------------------------------
+kable(prescriptions_id, align = c("c"), escape = FALSE,
+      table.attr = "style = \"color: black;\"",
+      caption = glue("prescriptions of id {interest_id}")) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed"),
+                full_width = FALSE, fixed_thead = T) %>%
+  row_spec(0, bold = T, color = "white", background = "dodgerblue",
+           extra_css = "vertical-align:middle") %>% 
+  footnote(footnote_as_chunk = TRUE, 
+           general = "one-year period prescriptions")
+
+```
+
+```{r pintar_todas_recetas, echo=FALSE, warning=FALSE, message=FALSE}
+# pintar todas las recetas-----------------------------------------------------
+ggplot(prescriptions_id, aes(color = prin_act_desc)) +
+  geom_segment(aes(x = presc_start_date, xend = presc_end_date, 
+                   y = n_presc, yend = n_presc, linetype = filled),
+               size = 1,
+               lineend = "round", 
+               arrow = arrow(ends = "both", type = "open", 
+                             length = unit(0.05, "cm"))) +
+  scale_linetype_manual(name = "filled", labels = c("0", "1"), values = c("dotted", "solid")) +
+  theme(legend.position = "bottom") +
+  xlab("date") +
+  ylab("prescription number") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%Y-%m" ) +
+  scale_color_discrete(name = "Tipo") +
+  ggtitle(glue("Prescriptions of individual {interest_id} in one-year period"))
+
+```
+
+```{r}
+df_lines <- data.frame(
+  linetype = factor(
+    1:4,
+    labels = c("solid", "longdash", "dashed", "dotted")
+  )
+)
+ggplot(df_lines) +
+  geom_hline(aes(linetype = linetype, yintercept = 0), size = 2) +
+  scale_linetype_identity() +
+  facet_grid(linetype ~ .) +
+  theme_void(20)
+```
+
+
+<br>
+
+#### Paso 2. Paleteo
+
+***
+
+En el segundo paso se paletean las recetas por cada principio activo por separado. En la siguiente figura se muestran los periodos del **individuo `r individuo1`** desde el año 2014. Se observa que, aunque sus últimas recetas tenían una duración posterior al *2018-12-31*, se ha fijado el tope del final del periodo en ese día.
+
+<br>
+
+```{r pintar_dias_dispensados, echo=FALSE, warning=FALSE, message=FALSE}
+# pintar todas las recetas-----------------------------------------------------
+ggplot(dias_disp_id_1 %>%
+             fsubset(f_inicio_periodo >= ymd("2014-01-01")) %>% 
+             mutate(n = 1:n()),
+             aes(color = prin_act_desc)) +
+  geom_segment(aes(x = f_inicio_periodo, y = n, xend = f_fin_periodo, yend = n), 
+               lineend = "round", 
+               arrow = arrow(ends = "both", type = "open", 
+                             length = unit(0.05, "cm"))) +
+  theme(legend.position = "bottom") +
+  xlab("fecha") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y" ) +
+  scale_color_discrete(name = "Tipo") +
+  ggtitle(glue("periodos del Individuo {individuo1} con f_inicio_periodo > 2014"))
+
+```
+
+<br>
+
+#### Paso 3. Colapso
+
+***
+
+Por último, se colapsan las recetas de cada principio activo para este individuo. En la siguiente figura se muestran los días cubiertos para el **individuo `r individuo1`** desde el año 2014.
+
+<br>
+
+```{r pintar_dias_colapsados, echo=FALSE, warning=FALSE, message=FALSE}
+# pintar todas las recetas-----------------------------------------------------
+ggplot(dias_colap_id_1 %>%
+             fsubset(f_inicio_periodo >= ymd("2014-01-01")) %>% 
+             mutate(n = 1:n())) +
+  geom_segment(aes(x = f_inicio_periodo, y = n, xend = f_fin_periodo, yend = n),
+               color = "blue",
+               lineend = "round", 
+               arrow = arrow(ends = "both", type = "open", 
+                             length = unit(0.05, "cm"))) +
+  theme(legend.position = "bottom") +
+  scale_y_continuous(breaks = seq(1, 3, by = 1)) +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y" ) +
+  xlab("fecha") +
+  ggtitle(glue("periodos del Individuo {individuo1} con f_inicio_periodo > 2014"))
+
+```
+
+<br>
+
+```{r}
+
+```
+
+
+
+# extend intervals
+
+***
+
+```{r}
+
+```
+
+
