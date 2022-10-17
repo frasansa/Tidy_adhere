@@ -163,8 +163,6 @@ ggplot(prescriptions_id, aes(color = prin_act_desc)) +
 all_prin_acts <- prescriptions_sample %>% 
   distinct(prin_act_desc) %>% pull()
 
-all_ids <- prescriptions_sample_pa1 %>% distinct(id) %>% pull()
-
 prescriptions_sample_pa1 <- prescriptions_sample %>% 
   filter(prin_act_desc == all_prin_acts[2]) %>% 
   arrange(presc_start_date)
@@ -301,6 +299,11 @@ ggplot(filled_extended_base_id, aes(color = prin_act_desc)) +
 ```{r}
 extended_base_id
 filled_extended_base_id
+
+usethis::create_from_github(
+  "https://github.com/frasansa/social_preg.git",
+  destdir = file.path("C:", "Users", "fcosa", "Desktop", "GIT_Projects")
+)
 
 ```
 
